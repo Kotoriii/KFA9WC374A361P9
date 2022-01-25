@@ -6,37 +6,44 @@ import OrganizationAutocomplete from './components/OrganizationAutocomplete.js'
 
 import './styles/App.css'
 
-const githubURL = 'https://api.github.com'
-
 function App() {
+  const [orgSearchText, setOrgSearchText] = useState('');
+  const [orgOptions, setOrgOptions] = useState([]);
   const [selectedOrg, setOrgSelection] = useState([]);
-  const [orgText, setOrgText] = useState('');
+  const [orgToFetch, setOrgToFetch] = useState()
 
   const [repoFilter, setRepoFilter] = useState('');
 
-  const fetchOrgs = async () => {
-    // get the data from the api
-    const response = await fetch(`${githubUrl}/orgs/${orgText}`);
-    // convert the data to json
-    const json = await response.json();
+  const fetchOrgsFromSearch = async () => {
+    try {
+      const response = await fetch(`https://api.github.com/search/users?type=org&q=${orgText}`);
+      const json = await response.json();
 
-    // set state with the result
-    setData(json);
+      extractOrgNames(json)
+  
+      setData(json);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   useEffect(() => {
-    if (orgText.length > 2) {
-
+    if (orgSearchText.length > 2) {
+      fetchOrgsFromSearch()
     }
-  }, [orgText]);
+  }, [orgSearchText]);
+
+  useEffect(() => {
+    setOrgToFetch(selectedOrg) // add property
+  }, [selectedOrg]);
 
   return (
     <div className="App">
       <Form>
         <Form.Group>
-          <OrganizationAutocomplete setInput={setOrgText} selected={selectedOrg} setSelection={setOrgSelection} />
+          <OrganizationAutocomplete setInput={setOrgSearchText} selected={selectedOrg} setSelection={setOrgSelection} />
         </Form.Group>
-        {selectedOrg.length > 0 &&
+        {orgToFetch.length > 0 &&
           <Form.Group>
             <Form.Label>Filter by repository</Form.Label>
             <Form.Control onChange={(event) => setRepoFilter(event.target.value)} placeholder="Repository Name" />
