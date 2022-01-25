@@ -1,7 +1,7 @@
 import { Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 
-const OrganizationAutocomplete = ({selected, setInput, setSelection}) => {
+const OrganizationAutocomplete = ({options, selected, setInput, setSelection}) => {
   return (
     <Typeahead
       onChange={(selected) => {
@@ -10,8 +10,9 @@ const OrganizationAutocomplete = ({selected, setInput, setSelection}) => {
       onInputChange={(text) => {
         setInput(text);
       }}
+      labelKey="login"
       id="organization"
-      options={["Doge", "Coin"]}
+      options={options}
       selected={selected}
     />
   );

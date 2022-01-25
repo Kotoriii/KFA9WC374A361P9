@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-
+import React, { useState, useEffect, useCallback } from 'react';
 import { Form } from "react-bootstrap";
+import debounce from 'lodash/debounce';
 
 import OrganizationAutocomplete from './components/OrganizationAutocomplete.js'
 
@@ -10,20 +10,30 @@ function App() {
   const [orgSearchText, setOrgSearchText] = useState('');
   const [orgOptions, setOrgOptions] = useState([]);
   const [selectedOrg, setOrgSelection] = useState([]);
-  const [orgToFetch, setOrgToFetch] = useState()
+  const [orgToFetchRepos, setOrgToFetchRepos] = useState('')
 
+  const [repositories, setRepositories] = useState([])
   const [repoFilter, setRepoFilter] = useState('');
 
-  const fetchOrgsFromSearch = async () => {
+  const fetchOrgsFromSearch = useCallback(debounce(async function () {
     try {
-      const response = await fetch(`https://api.github.com/search/users?type=org&q=${orgText}`);
+      const response = await fetch(`https://api.github.com/search/users?type=org&q=${orgSearchText}`);
       const json = await response.json();
-
-      extractOrgNames(json)
   
-      setData(json);
+      setOrgOptions(json.items);
     } catch (error) {
-      console.error(error);
+      console.log(error);
+    }
+  }, 500))
+
+  const fetchReposFromSelectedOrg = async () => {
+    try {
+      const response = await fetch(orgToFetchRepos);
+      const json = await response.json();
+  
+      setRepositories(json);
+    } catch (error) {
+      console.log(error);
     }
   }
 
@@ -34,16 +44,24 @@ function App() {
   }, [orgSearchText]);
 
   useEffect(() => {
-    setOrgToFetch(selectedOrg) // add property
+    if (selectedOrg.length) {
+      setOrgToFetchRepos(selectedOrg[0].repos_url)
+    }
   }, [selectedOrg]);
+
+  useEffect(() => {
+    if (orgToFetchRepos) {
+      fetchReposFromSelectedOrg()
+    }
+  }, [orgToFetchRepos]);
 
   return (
     <div className="App">
       <Form>
         <Form.Group>
-          <OrganizationAutocomplete setInput={setOrgSearchText} selected={selectedOrg} setSelection={setOrgSelection} />
+          <OrganizationAutocomplete setInput={setOrgSearchText} options={orgOptions} selected={selectedOrg} setSelection={setOrgSelection} />
         </Form.Group>
-        {orgToFetch.length > 0 &&
+        {orgToFetchRepos.length > 0 &&
           <Form.Group>
             <Form.Label>Filter by repository</Form.Label>
             <Form.Control onChange={(event) => setRepoFilter(event.target.value)} placeholder="Repository Name" />
